@@ -2,7 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 4000;
+const ObjectId = require('mongodb').ObjectId;
 const { MongoClient } = require('mongodb');
+//mongoDB Username and Password
+//user: YASIN440
+//pass: SOSahuAp986qk0Yz
+
+
+//middleware
 app.use(cors());
 app.use(express.json());
 
@@ -10,25 +17,40 @@ app.use(express.json());
 const uri = "mongodb+srv://YASIN440:SOSahuAp986qk0Yz@cluster0.nort6.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
+
 async function run() {
     try {
-      await client.connect();
-      const database = client.db("test");
-      const userCollection = database.collection("devices");
-      // create a document to insert
-      const doc = {
-        id: 3,
-        userName: 'robin', 
-        education: 'BSC in Mechanical',
-        job: 'student'
-      }
-      const result = await userCollection.insertOne(doc);
-      console.log(`A document was inserted with the _id: ${result.insertedId}`);
+        await client.connect();
+        const database = client.db("friend-circle");
+        const userCollection = database.collection("friends");
+        //GET API
+        app.get('/users', async (req, res) => {
+            const cursor = userCollection.find({});
+            const users = await cursor.toArray();
+            res.send(users);
+        })
+        // POST API
+        app.post('/users', async (req, res) => {
+            const newFriend = req.body;
+            const result = await userCollection.insertOne(newFriend);
+            console.log('got new friend', req.body);
+            console.log('got new user', result);
+            res.json(result);
+        })
+        //DELETE API
+        app.delete('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await userCollection.deleteOne(query);
+            console.log(result);
+            res.send(result);
+        })
+
     } finally {
-      await client.close();
+        // await client.close();
     }
-  }
-  run().catch(console.dir);
+}
+run().catch(console.dir);
 // const collection = client.db("test").collection("devices");
 // // perform actions on the collection object
 // console.log('hitting the database');
@@ -43,60 +65,59 @@ async function run() {
 // });
 
 
-//for check express working
+///---for check express working(heard code)
 app.get('/', (req, res) => {
     res.send('hello')
 });
 
-//mongoDB Username and Password
-//user: YASIN440
-//pass: SOSahuAp986qk0Yz
 
-//dynamic url
-const users = [
-    { id: 0, userName: 'yasin', education: 'BSC in CSE', job: 'student' },
-    { id: 1, userName: 'nasim', education: 'BSC in EEE', job: 'student' },
-    { id: 2, userName: 'jakir', education: 'BSC in medicine', job: 'student' },
-    { id: 3, userName: 'robin', education: 'BSC in Mechanical', job: 'student' },
-    { id: 4, userName: 'nayeem', education: 'BSC in glass', job: 'student' },
-    { id: 5, userName: 'joy', education: 'honers', job: 'student' },
-    { id: 6, userName: 'jubayer', education: 'MBA', job: 'student' }
-]
+////---dynamic url hardCode data
+// const users = [
+//     { id: 0, userName: 'yasin', education: 'BSC in CSE', job: 'student' },
+//     { id: 1, userName: 'nasim', education: 'BSC in EEE', job: 'student' },
+//     { id: 2, userName: 'jakir', education: 'BSC in medicine', job: 'student' },
+//     { id: 3, userName: 'robin', education: 'BSC in Mechanical', job: 'student' },
+//     { id: 4, userName: 'nayeem', education: 'BSC in glass', job: 'student' },
+//     { id: 5, userName: 'joy', education: 'honers', job: 'student' },
+//     { id: 6, userName: 'jubayer', education: 'MBA', job: 'student' }
+// ]
 
 
-// search by name or anything else
-app.get('/users', (req, res) => {
-    const search = req.query.search;
-    //----------(ternary operator..)
-    // search ? res.send(users.filter(u => u.userName.toLocaleLowerCase().includes(search))) : res.send(users)
 
-    if (search) {
-        const searchResult = users.filter(u => u.userName.toLocaleLowerCase().includes(search))
-        res.send(searchResult);
-    }
-    else {
-        res.send(users);
-    }
-});
+////-----add data from UI with app>METHOD
+// app.post('/users', (req, res) => {
+//     const newUser = req.body;
+//     // console.log(newUser);
+//     newUser.id = users.length;
+//     users.push(newUser);
+//     // res.send(JSON.stringify(newUser))
+//     res.json(newUser);
+// })
 
 
-//search with index.
-app.get('/users/:id', (req, res) => {
-    const index = req.params.id;
-    const user = users[index];
-    res.send(user);
-})
+// //----- search by name or anything else
+// app.get('/users', (req, res) => {
+//     const search = req.query.search;
+//     //----------(ternary operator..)
+//     // search ? res.send(users.filter(u => u.userName.toLocaleLowerCase().includes(search))) : res.send(users)
 
-//add data from UI with app>METHOD
-app.post('/users', (req, res) => {
-    const newUser = req.body;
-    // console.log(newUser);
-    newUser.id = users.length;
-    users.push(newUser);
-    // res.send(JSON.stringify(newUser))
-    res.json(newUser);
+//     if (search) {
+//         const searchResult = users.filter(u => u.userName.toLocaleLowerCase().includes(search))
+//         res.send(searchResult);
+//     }
+//     else {
+//         res.send(users);
+//     }
+// });
 
-})
+
+// //----search with index.
+// app.get('/users/:id', (req, res) => {
+//     const index = req.params.id;
+//     const user = users[index];
+//     res.send(user);
+// })
+
 
 app.listen(port, () => {
     console.log('listening to port', port);
