@@ -29,13 +29,34 @@ async function run() {
             const users = await cursor.toArray();
             res.send(users);
         })
+        //------------update API
+        app.get('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await userCollection.findOne(query);
+            res.send(result);
+        })
         // POST API
         app.post('/users', async (req, res) => {
             const newFriend = req.body;
             const result = await userCollection.insertOne(newFriend);
-            console.log('got new friend', req.body);
-            console.log('got new user', result);
             res.json(result);
+        })
+        //UPDATE API
+        app.put('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const updateUser = req.body;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    education: updateUser.education,
+                    job: updateUser.job,
+                },
+            };
+            const result = await userCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+
         })
         //DELETE API
         app.delete('/users/:id', async (req, res) => {
@@ -45,6 +66,7 @@ async function run() {
             console.log(result);
             res.send(result);
         })
+
 
     } finally {
         // await client.close();
